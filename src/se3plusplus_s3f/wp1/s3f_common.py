@@ -12,13 +12,12 @@ from pyrecest.distributions.hypertorus.hypertoroidal_grid_distribution import (
     HypertoroidalGridDistribution,
 )
 from pyrecest.distributions.nonperiodic.gaussian_distribution import GaussianDistribution
-from pyrecest.filters.state_space_subdivision_filter import StateSpaceSubdivisionFilter
-
-from .relaxed_s3f_circular import (
+from pyrecest.filters.relaxed_s3f_circular import (
     circular_weighted_mean,
     grid_probability_masses,
     predict_circular_relaxed,
 )
+from pyrecest.filters.state_space_subdivision_filter import StateSpaceSubdivisionFilter
 
 
 def make_s3f_filter(

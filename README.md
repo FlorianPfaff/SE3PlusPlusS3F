@@ -13,6 +13,10 @@ infrastructure should move upstream to
 python -m pip install -e ".[dev]"
 ```
 
+The package currently pins PyRecEst to the merge commit that contains the
+relaxed circular S3F helper. Switch back to a versioned PyPI dependency after
+the next PyRecEst release includes that helper.
+
 For a minimal runtime install:
 
 ```bash

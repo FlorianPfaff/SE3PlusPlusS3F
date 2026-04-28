@@ -9,9 +9,9 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from pyrecest.filters.relaxed_s3f_circular import SUPPORTED_RELAXED_S3F_VARIANTS, circular_error
 
 from .plotting import format_plot_list, write_metric_line_plots
-from .relaxed_s3f_circular import SUPPORTED_RELAXED_S3F_VARIANTS, circular_error
 from .relaxed_s3f_pilot import (
     VARIANT_LABELS,
     PilotConfig,

@@ -14,14 +14,14 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.special import i0
-
-from .plotting import format_plot_list, write_metric_line_plots
-from .relaxed_s3f_circular import (
+from pyrecest.filters.relaxed_s3f_circular import (
     SUPPORTED_RELAXED_S3F_VARIANTS,
     circular_error,
     rotation_matrix,
 )
+from scipy.special import i0
+
+from .plotting import format_plot_list, write_metric_line_plots
 from .s3f_common import (
     linear_position_error_stats,
     make_linear_likelihood,
