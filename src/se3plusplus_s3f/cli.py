@@ -6,6 +6,7 @@ import argparse
 from dataclasses import replace
 from pathlib import Path
 
+from .s1r2.baseline_comparison import BaselineComparisonConfig, write_baseline_comparison_outputs
 from .s1r2.euroc_planar import EuRoCPlanarConfig, write_euroc_planar_outputs
 from .s1r2.highres_reference import HighResReferenceConfig, write_highres_reference_outputs
 from .s1r2.relaxed_s3f_pilot import PilotConfig, load_pilot_config, write_relaxed_s3f_pilot_outputs
@@ -42,6 +43,26 @@ def main() -> None:
             reference_grid_size=args.reference_grid_size,
         )
         outputs = write_highres_reference_outputs(
+            output_dir=args.output_dir,
+            config=config,
+            write_plots=not args.no_plots,
+        )
+        for label, path in outputs.items():
+            print(f"Wrote {label}: {path}")
+        return
+
+    if args.command == "compare-baselines":
+        config = BaselineComparisonConfig(
+            pilot=PilotConfig(
+                grid_sizes=tuple(args.grid_sizes),
+                n_trials=args.trials,
+                n_steps=args.steps,
+                seed=args.seed,
+            ),
+            particle_count=args.particle_count,
+            particle_seed=args.particle_seed,
+        )
+        outputs = write_baseline_comparison_outputs(
             output_dir=args.output_dir,
             config=config,
             write_plots=not args.no_plots,
@@ -109,6 +130,23 @@ def _parse_args() -> argparse.Namespace:
     highres.add_argument("--steps", type=int, default=16)
     highres.add_argument("--seed", type=int, default=17)
     highres.add_argument("--no-plots", action="store_true")
+
+    comparison = subparsers.add_parser(
+        "compare-baselines",
+        help="Compare S1 x R2 relaxed S3F variants against EKF and particle baselines.",
+    )
+    comparison.add_argument(
+        "--output-dir",
+        type=Path,
+        default=Path("results") / "baseline_comparison",
+    )
+    comparison.add_argument("--grid-sizes", type=int, nargs="+", default=[8, 16, 32, 64])
+    comparison.add_argument("--trials", type=int, default=32)
+    comparison.add_argument("--steps", type=int, default=20)
+    comparison.add_argument("--seed", type=int, default=7)
+    comparison.add_argument("--particle-count", type=int, default=1024)
+    comparison.add_argument("--particle-seed", type=int, default=101)
+    comparison.add_argument("--no-plots", action="store_true")
 
     euroc = subparsers.add_parser(
         "euroc-planar",
