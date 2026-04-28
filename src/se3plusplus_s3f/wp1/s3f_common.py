@@ -101,6 +101,12 @@ def linear_position_error_stats(
     return error, nees
 
 
+def linear_position_mean(filter_: StateSpaceSubdivisionFilter) -> np.ndarray:
+    """Return the current linear position mean."""
+
+    return np.asarray(filter_.filter_state.linear_mean(), dtype=float)
+
+
 def orientation_mode_and_mean(filter_: StateSpaceSubdivisionFilter) -> tuple[float, float]:
     """Return the modal grid angle and circular mean angle."""
 

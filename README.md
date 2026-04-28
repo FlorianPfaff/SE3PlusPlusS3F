@@ -46,6 +46,20 @@ The same configuration can also be passed through the package CLI:
 se3plusplus-s3f wp1-relaxed-s3f --config configs/wp1_relaxed_s3f_pilot.json
 ```
 
+## Compare Against a High-Resolution S3F Reference
+
+Before comparing against unrelated filters, the first controlled comparison is
+coarse relaxed S3F against an expensive high-resolution baseline S3F reference.
+
+```bash
+se3plusplus-s3f wp1-highres-reference
+```
+
+This writes a metrics CSV, plots, metadata, and a short note to
+`results/wp1_s1_r2_highres_reference/`. The main approximation metrics are
+translation RMSE and circular orientation error relative to the high-resolution
+reference.
+
 ## Run a EuRoC Planar Smoke Test
 
 The EuRoC smoke path uses a single ground-truth trajectory file and projects it
