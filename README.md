@@ -46,6 +46,21 @@ The same configuration can also be passed through the package CLI:
 se3plusplus-s3f wp1-relaxed-s3f --config configs/wp1_relaxed_s3f_pilot.json
 ```
 
+## Run a EuRoC Planar Smoke Test
+
+The EuRoC smoke path uses a single ground-truth trajectory file and projects it
+to the WP1 `S1 x R2` setting. It is a trajectory-geometry check, not a
+visual-inertial frontend.
+
+```bash
+se3plusplus-s3f wp1-euroc-planar --groundtruth-path path/to/MH_01_easy.txt
+```
+
+The GitHub workflow `.github/workflows/euroc-mh01-smoke.yml` downloads the
+`MH_01_easy` ground-truth text file from the DROID-SLAM EuRoC ground-truth
+mirror, verifies its SHA-256 checksum, caches it, runs the planar relaxed-S3F
+smoke test, and validates finite nontrivial metrics.
+
 ## Test
 
 ```bash
