@@ -122,7 +122,7 @@ jobs:
           PY
 
       - name: Upload EuRoC smoke artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: se3plusplus-s3f-euroc-mh01-smoke
           path: ci_smoke/euroc_mh01_planar
