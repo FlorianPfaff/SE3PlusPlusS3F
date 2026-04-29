@@ -64,6 +64,18 @@ This writes a metrics CSV, plots, metadata, and a short note to
 translation RMSE and circular orientation error relative to the high-resolution
 reference.
 
+## Compare Against Baseline Filters
+
+The next controlled comparison uses the same generated trials for every method
+and adds a single-Gaussian EKF and bootstrap particle filter baseline.
+
+```bash
+se3plusplus-s3f compare-baselines
+```
+
+This writes a metrics CSV, plots, metadata, and a short note to
+`results/baseline_comparison/`.
+
 ## Run a EuRoC Planar Smoke Test
 
 The EuRoC smoke path uses a single ground-truth trajectory file and projects it

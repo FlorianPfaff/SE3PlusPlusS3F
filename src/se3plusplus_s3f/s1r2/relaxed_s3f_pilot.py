@@ -126,6 +126,15 @@ def run_relaxed_s3f_pilot(config: PilotConfig = PilotConfig()) -> list[dict[str,
     """Run the relaxed-S3F benchmark and return one metrics row per variant/grid."""
 
     trials = generate_pilot_trials(config)
+    return run_relaxed_s3f_pilot_on_trials(config, trials)
+
+
+def run_relaxed_s3f_pilot_on_trials(
+    config: PilotConfig,
+    trials: list[dict[str, np.ndarray | float]],
+) -> list[dict[str, float | int | str]]:
+    """Run the relaxed-S3F benchmark on precomputed shared trials."""
+
     rows: list[dict[str, float | int | str]] = []
 
     for n_cells in config.grid_sizes:
