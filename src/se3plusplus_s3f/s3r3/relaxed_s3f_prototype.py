@@ -88,15 +88,44 @@ def s3r3_prototype_config_to_dict(config: S3R3PrototypeConfig) -> dict[str, Any]
     return json.loads(json.dumps(asdict(config)))
 
 
+def validate_s3r3_prototype_config(
+    config: S3R3PrototypeConfig,
+    *,
+    reference_grid_size: int | None = None,
+    required_variants: tuple[str, ...] = (),
+) -> None:
+    """Validate shared S3R3 prototype and reference-run settings."""
+
+    if not config.grid_sizes:
+        raise ValueError("grid_sizes must not be empty.")
+    if min(config.grid_sizes) <= 0:
+        raise ValueError("all grid sizes must be positive.")
+    if reference_grid_size is not None and reference_grid_size <= max(config.grid_sizes):
+        raise ValueError("reference_grid_size must be greater than every coarse grid size.")
+    if config.n_trials <= 0:
+        raise ValueError("n_trials must be positive.")
+    if config.n_steps <= 0:
+        raise ValueError("n_steps must be positive.")
+    if config.cell_sample_count <= 0:
+        raise ValueError("cell_sample_count must be positive.")
+
+    unknown_variants = [variant for variant in config.variants if variant not in SUPPORTED_S3R3_VARIANTS]
+    if unknown_variants:
+        raise ValueError(f"Unknown variant {unknown_variants[0]!r}.")
+
+    missing_variants = sorted(set(required_variants) - set(config.variants))
+    if missing_variants:
+        raise ValueError(f"evidence summary requires variants: {missing_variants}.")
+
+
 def run_s3r3_relaxed_prototype(config: S3R3PrototypeConfig = S3R3PrototypeConfig()) -> list[dict[str, float | int | str]]:
     """Run the S3+ x R3 relaxed-S3F prototype and return one metrics row per variant/grid."""
 
+    validate_s3r3_prototype_config(config)
     trials = generate_s3r3_trials(config)
     rows: list[dict[str, float | int | str]] = []
     for grid_size in config.grid_sizes:
         for variant in config.variants:
-            if variant not in SUPPORTED_S3R3_VARIANTS:
-                raise ValueError(f"Unknown variant {variant!r}.")
             rows.append(_run_variant(config, trials, grid_size, variant))
     return rows
 
