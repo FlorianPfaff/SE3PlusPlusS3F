@@ -127,7 +127,9 @@ numerical prototype rather than an exact `S3+` cell-integral implementation.
 se3plusplus-s3f s3r3-relaxed
 ```
 
-This writes outputs to `results/s3r3_relaxed/`.
+This writes outputs to `results/s3r3_relaxed/`. For a reproducible runner-side
+report without committing generated files, use the manual GitHub Actions
+workflow `S3R3 Relaxed Report`.
 
 ## Profile S3F Runtime
 

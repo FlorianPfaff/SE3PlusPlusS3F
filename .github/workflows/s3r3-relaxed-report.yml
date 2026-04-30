@@ -1,0 +1,177 @@
+name: S3R3 Relaxed Report
+
+on:
+  workflow_dispatch:
+    inputs:
+      grid_sizes:
+        description: Space-separated quaternion grid sizes.
+        required: true
+        default: "8 16 32"
+        type: string
+      trials:
+        description: Synthetic trials used for each S3R3 row.
+        required: true
+        default: 16
+        type: number
+      steps:
+        description: Prediction/update steps in each trial.
+        required: true
+        default: 12
+        type: number
+      cell_sample_count:
+        description: Local tangent samples used for each quaternion cell.
+        required: true
+        default: 27
+        type: number
+      retention_days:
+        description: Days to retain the uploaded report artifact.
+        required: true
+        default: 30
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  s3r3-report:
+    name: Build S3R3 relaxed report
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      GRID_SIZES: ${{ inputs.grid_sizes }}
+      TRIALS: ${{ inputs.trials }}
+      STEPS: ${{ inputs.steps }}
+      CELL_SAMPLE_COUNT: ${{ inputs.cell_sample_count }}
+      OUTPUT_DIR: results/s3r3_relaxed
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run S3R3 relaxed report
+        run: |
+          python - <<'PY'
+          import os
+          import subprocess
+          import sys
+
+          def positive_int_tokens(name):
+              raw_tokens = os.environ[name].split()
+              if not raw_tokens:
+                  raise ValueError(f"{name} must contain at least one value.")
+              try:
+                  parsed = [int(token) for token in raw_tokens]
+              except ValueError as exc:
+                  raise ValueError(f"{name} must contain positive integers: {raw_tokens}") from exc
+              if any(value <= 0 for value in parsed):
+                  raise ValueError(f"{name} must contain positive integers: {raw_tokens}")
+              return [str(value) for value in parsed]
+
+          grid_sizes = positive_int_tokens("GRID_SIZES")
+
+          trials = int(os.environ["TRIALS"])
+          steps = int(os.environ["STEPS"])
+          cell_sample_count = int(os.environ["CELL_SAMPLE_COUNT"])
+          if min(trials, steps, cell_sample_count) <= 0:
+              raise ValueError("trials, steps, and cell_sample_count must be positive.")
+
+          command = [sys.executable, "-m", "se3plusplus_s3f.cli", "s3r3-relaxed"]
+          command.extend(["--grid-sizes", *grid_sizes])
+          command.extend(["--trials", str(trials), "--steps", str(steps)])
+          command.extend(["--cell-sample-count", str(cell_sample_count)])
+          command.extend(["--output-dir", os.environ["OUTPUT_DIR"]])
+          subprocess.run(command, check=True)
+          PY
+
+      - name: Validate S3R3 report outputs
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          import math
+          import os
+          from pathlib import Path
+
+          output_dir = Path(os.environ["OUTPUT_DIR"])
+          metrics_path = output_dir / "s3r3_relaxed_metrics.csv"
+          metadata_path = output_dir / "run_metadata.json"
+          note_path = output_dir / "s3r3_relaxed_note.md"
+          plot_paths = [
+              output_dir / "s3r3_relaxed_position_rmse.png",
+              output_dir / "s3r3_relaxed_nees.png",
+          ]
+          for required_path in (metrics_path, metadata_path, note_path, *plot_paths):
+              if not required_path.exists():
+                  raise FileNotFoundError(required_path)
+
+          rows = list(csv.DictReader(metrics_path.open(newline="", encoding="utf-8")))
+          grid_sizes = os.environ["GRID_SIZES"].split()
+          expected_rows = 3 * len(grid_sizes)
+          if len(rows) != expected_rows:
+              raise AssertionError(f"Expected {expected_rows} rows, found {len(rows)}.")
+
+          variants = {row["variant"] for row in rows}
+          if variants != {"baseline", "r1", "r1_r2"}:
+              raise AssertionError(variants)
+
+          finite_columns = (
+              "position_rmse",
+              "orientation_mode_error_rad",
+              "mean_nees",
+              "runtime_ms_per_step",
+              "cell_radius_rad",
+          )
+          for row in rows:
+              if row["grid_size"] not in grid_sizes:
+                  raise AssertionError(row)
+              if int(row["cell_sample_count"]) != int(os.environ["CELL_SAMPLE_COUNT"]):
+                  raise AssertionError(row)
+              if not 0.0 <= float(row["coverage_95"]) <= 1.0:
+                  raise AssertionError(row)
+              for column in finite_columns:
+                  if not math.isfinite(float(row[column])):
+                      raise AssertionError(row)
+              if float(row["runtime_ms_per_step"]) <= 0.0:
+                  raise AssertionError(row)
+
+          metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+          if metadata["experiment"] != "s3r3_relaxed_prototype":
+              raise AssertionError(metadata)
+          if metadata["metrics_rows"] != len(rows):
+              raise AssertionError(metadata)
+          if metadata["config"]["grid_sizes"] != [int(value) for value in grid_sizes]:
+              raise AssertionError(metadata)
+          if metadata["config"]["cell_sample_count"] != int(os.environ["CELL_SAMPLE_COUNT"]):
+              raise AssertionError(metadata)
+
+          print(f"Validated {len(rows)} S3R3 report rows in {metrics_path}.")
+          PY
+
+      - name: Write report summary
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+
+          note = Path(os.environ["OUTPUT_DIR"]) / "s3r3_relaxed_note.md"
+          Path(os.environ["GITHUB_STEP_SUMMARY"]).write_text(note.read_text(encoding="utf-8"), encoding="utf-8")
+          PY
+
+      - name: Upload S3R3 report artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: s3r3-relaxed-report-${{ github.run_number }}
+          path: ${{ env.OUTPUT_DIR }}
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
