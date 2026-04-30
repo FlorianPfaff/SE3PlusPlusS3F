@@ -12,6 +12,7 @@ on:
       - "pyproject.toml"
       - "README.md"
       - ".github/workflows/se3plusplus-s3f-ci.yml"
+      - ".github/workflows/s3r3-particle-comparison.yml"
   pull_request:
     branches:
       - main
@@ -23,6 +24,7 @@ on:
       - "pyproject.toml"
       - "README.md"
       - ".github/workflows/se3plusplus-s3f-ci.yml"
+      - ".github/workflows/s3r3-particle-comparison.yml"
   workflow_dispatch:
 
 permissions:
@@ -270,6 +272,57 @@ jobs:
           print("S3R3 high-resolution reference rows:", rows)
           PY
 
+      - name: Run S3R3 particle comparison CLI smoke
+        if: matrix.python-version == '3.11'
+        run: |
+          python -m se3plusplus_s3f.cli \
+            s3r3-particle-comparison \
+            --grid-sizes 8 \
+            --particle-counts 16 \
+            --prior-kappas 2.0 \
+            --body-increment-scales 1.0 \
+            --trials 1 \
+            --steps 2 \
+            --no-plots \
+            --output-dir ci_smoke/s3r3_particle_comparison
+
+      - name: Validate S3R3 particle comparison smoke outputs
+        if: matrix.python-version == '3.11'
+        run: |
+          python - <<'PY'
+          import csv
+          import math
+          from pathlib import Path
+
+          required = {
+              "metrics": Path("ci_smoke/s3r3_particle_comparison/s3r3_particle_comparison_metrics.csv"),
+              "summary": Path("ci_smoke/s3r3_particle_comparison/s3r3_particle_comparison_summary.csv"),
+              "metadata": Path("ci_smoke/s3r3_particle_comparison/run_metadata.json"),
+              "note": Path("ci_smoke/s3r3_particle_comparison/s3r3_particle_comparison_note.md"),
+          }
+          missing = [label for label, path in required.items() if not path.exists()]
+          if missing:
+              raise FileNotFoundError(missing)
+
+          rows = list(csv.DictReader(required["metrics"].open(newline="", encoding="utf-8")))
+          if len(rows) != 4:
+              raise AssertionError(rows)
+          filters = {row["filter"] for row in rows}
+          if filters != {"s3f", "particle_filter"}:
+              raise AssertionError(filters)
+          summary = list(csv.DictReader(required["summary"].open(newline="", encoding="utf-8")))
+          if len(summary) != 1:
+              raise AssertionError(summary)
+          for row in rows:
+              assert math.isfinite(float(row["position_rmse"])), row
+              assert math.isfinite(float(row["runtime_ms_per_step"])), row
+          for row in summary:
+              assert math.isfinite(float(row["best_particle_rmse_ratio"])), row
+              assert math.isfinite(float(row["nearest_particle_rmse_ratio"])), row
+
+          print("S3R3 particle comparison rows:", rows)
+          PY
+
       - name: Upload JUnit results
         if: always()
         uses: actions/upload-artifact@v7
@@ -288,6 +341,7 @@ jobs:
             ci_smoke/baseline_comparison
             ci_smoke/s3r3_relaxed
             ci_smoke/s3r3_highres_reference
+            ci_smoke/s3r3_particle_comparison
 
   package-smoke:
     name: Build package and run CLI entry point
