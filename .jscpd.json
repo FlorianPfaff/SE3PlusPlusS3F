@@ -1,0 +1,5 @@
+{
+  "$schema": "https://raw.githubusercontent.com/kucherenko/jscpd/master/schemas/options.json",
+  "gitignore": true,
+  "threshold": 1
+}

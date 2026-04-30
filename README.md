@@ -166,6 +166,20 @@ se3plusplus-s3f s3r3-stress-sweep
 This writes scenario metrics, comparison claim rows, summary tables, plots,
 metadata, and a short note to `results/s3r3_stress_sweep/`.
 
+## Compare S3R3 Against a Particle Filter
+
+To compare the best `R1+R2` relaxed S3F row in each S3R3 stress scenario
+against bootstrap particle-filter particle counts:
+
+```bash
+se3plusplus-s3f s3r3-particle-comparison
+```
+
+This writes combined S3F/PF metrics, per-scenario comparison summaries, plots,
+metadata, and a short note to `results/s3r3_particle_comparison/`. For larger
+artifact-only runs, use the manual GitHub Actions workflow
+`S3R3 Particle Comparison`.
+
 ## Profile S3F Runtime
 
 To split relaxed S3F runtime into likelihood construction, cell-statistics,
