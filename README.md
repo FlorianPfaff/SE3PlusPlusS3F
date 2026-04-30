@@ -142,6 +142,18 @@ se3plusplus-s3f s3r3-highres-reference
 This writes outputs to `results/s3r3_highres_reference/`. The reference is a
 denser baseline S3F quaternion grid, not an external filter.
 
+## Summarize S3R3 Evidence
+
+To combine direct relaxed S3R3 metrics and the high-resolution reference
+comparison into explicit claim rows:
+
+```bash
+se3plusplus-s3f s3r3-evidence-summary
+```
+
+This writes relaxed metrics, high-resolution reference metrics, claim rows,
+plots, metadata, and a short note to `results/s3r3_evidence_summary/`.
+
 ## Profile S3F Runtime
 
 To split relaxed S3F runtime into likelihood construction, cell-statistics,

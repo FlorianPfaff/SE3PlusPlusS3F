@@ -25,6 +25,7 @@ from .relaxed_s3f_prototype import (
     s3r3_linear_position_mean,
     s3r3_orientation_distance,
     s3r3_orientation_mode,
+    validate_s3r3_prototype_config,
 )
 
 
@@ -88,7 +89,7 @@ def run_s3r3_highres_reference_benchmark(
 ) -> list[dict[str, float | int | str]]:
     """Compare coarse S3+ x R3 relaxed S3F variants against a denser baseline S3F reference."""
 
-    _validate_config(config)
+    validate_s3r3_prototype_config(config.prototype, reference_grid_size=config.reference_grid_size)
     prototype = config.prototype
     trials = generate_s3r3_trials(prototype)
     measurement_cov = np.eye(3) * prototype.measurement_noise_std**2
@@ -241,25 +242,6 @@ def _accumulate_candidate(
     totals.nees_sum += nees
     totals.coverage_hits += int(nees <= 7.814727903251179)
     totals.runtime_s += elapsed_s
-
-
-def _validate_config(config: S3R3HighResReferenceConfig) -> None:
-    prototype = config.prototype
-    if not prototype.grid_sizes:
-        raise ValueError("grid_sizes must not be empty.")
-    if min(prototype.grid_sizes) <= 0:
-        raise ValueError("all grid sizes must be positive.")
-    if config.reference_grid_size <= max(prototype.grid_sizes):
-        raise ValueError("reference_grid_size must be greater than every coarse grid size.")
-    if prototype.n_trials <= 0:
-        raise ValueError("n_trials must be positive.")
-    if prototype.n_steps <= 0:
-        raise ValueError("n_steps must be positive.")
-    if prototype.cell_sample_count <= 0:
-        raise ValueError("cell_sample_count must be positive.")
-    for variant in prototype.variants:
-        if variant not in SUPPORTED_S3R3_VARIANTS:
-            raise ValueError(f"Unknown variant {variant!r}.")
 
 
 def _row_from_totals(
